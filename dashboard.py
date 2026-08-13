@@ -11,6 +11,7 @@ CSV_PATTERN = "export-*.csv"
 OUTPUT_HTML = "index.html"
 TRADING_DAYS_PER_YEAR = 252
 CVAR_LEVEL = 0.95
+EXCLUDED_STRATEGIES = {"$2 Put Credit Spread"}
 
 
 def newest_csv():
@@ -22,6 +23,7 @@ def newest_csv():
 
 def load_trades(path):
     trades = []
+    excluded = 0
     with open(path, newline="") as f:
         for row in csv.DictReader(f):
             try:
@@ -29,20 +31,24 @@ def load_trades(path):
                 open_date = datetime.strptime(row["OpenDate"], "%Y-%m-%d").date()
                 pnl = float(row["ProfitLoss"])
                 bp = float(row["BuyingPower"]) if row.get("BuyingPower") else 0.0
+                strategy = row.get("Strategy", "")
+                if strategy in EXCLUDED_STRATEGIES:
+                    excluded += 1
+                    continue
                 trades.append(
                     {
                         "close": close_date,
                         "open": open_date,
                         "pnl": pnl,
                         "bp": bp,
-                        "strategy": row.get("Strategy", ""),
+                        "strategy": strategy,
                     }
                 )
             except (ValueError, KeyError):
                 continue
     if not trades:
         raise SystemExit(f"No parseable trades in {path}")
-    return trades
+    return trades, excluded
 
 
 def daily_pnl(trades):
@@ -174,6 +180,7 @@ def build_html(stats, meta):
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "csv": os.path.basename(meta["csv_path"]),
         "period": f"{meta['start']} — {meta['end']}",
+        "excluded": meta.get("excluded_note", ""),
     }
     cards = [
         ("Sharpe (252d)", stats["sharpe"], "green" if stats["sharpe_raw"] >= 1 else "red"),
@@ -226,7 +233,7 @@ def build_html(stats, meta):
 
 def main():
     csv_path = newest_csv()
-    trades = load_trades(csv_path)
+    trades, excluded = load_trades(csv_path)
     daily = daily_pnl(trades)
     points = equity_curve(daily, STARTING_CAPITAL)
     n_days = len(daily)
@@ -278,6 +285,8 @@ def main():
         "equity_svg": svg_equity(points),
     }
     meta = {"csv_path": csv_path, "start": daily[0][0].isoformat(), "end": daily[-1][0].isoformat()}
+    if excluded:
+        meta["excluded_note"] = " · Excluded: " + ", ".join(sorted(EXCLUDED_STRATEGIES)) + f" ({excluded} trades)"
     html = build_html(stats, meta)
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), OUTPUT_HTML), "w") as f:
         f.write(html)
