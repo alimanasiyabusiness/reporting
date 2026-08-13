@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>$title</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --card: #12161f;
+    --border: #1f2733;
+    --text: #e6e9f0;
+    --muted: #8b93a7;
+    --green: #22c55e;
+    --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 32px 24px 64px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .card-value {
+    font-size: 34px;
+    font-weight: 700;
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+  }
+  .chip-label { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .chip-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .months { display: flex; flex-direction: column; gap: 8px; }
+  .month-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>$title</h1>
+    <div class="sub">Coverage: $period &nbsp;·&nbsp; Source: $csv &nbsp;·&nbsp; Generated: $generated</div>
+  </header>
+
+  <div class="grid">$cards</div>
+
+  <div class="row">$chips</div>
+
+  <div class="card">
+    <h2>Equity Curve</h2>
+    $equity_svg
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Monthly P&amp;L</h2>
+    <div class="months">$months</div>
+  </div>
+
+  <footer>Starts at 100k; buying power and returns compound with equity. Annualized metrics use 252 trading days.</footer>
+</div>
+</body>
+</html>

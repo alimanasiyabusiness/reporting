@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Performance Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --card: #12161f;
+    --border: #1f2733;
+    --text: #e6e9f0;
+    --muted: #8b93a7;
+    --green: #22c55e;
+    --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 32px 24px 64px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .card-value {
+    font-size: 34px;
+    font-weight: 700;
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+  }
+  .chip-label { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .chip-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .months { display: flex; flex-direction: column; gap: 8px; }
+  .month-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Performance Dashboard</h1>
+    <div class="sub">Coverage: 2026-07-06 — 2026-08-11 &nbsp;·&nbsp; Source: export-TradeStation-2026-08-12.csv &nbsp;·&nbsp; Generated: 2026-08-12 20:21</div>
+  </header>
+
+  <div class="grid">
+        <div class="card">
+          <div class="card-label">Sharpe (252d)</div>
+          <div class="card-value green">4.02</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Sortino (252d)</div>
+          <div class="card-value green">7.59</div>
+        </div>
+        <div class="card">
+          <div class="card-label">MAR</div>
+          <div class="card-value green">16.72</div>
+        </div>
+        <div class="card">
+          <div class="card-label">cVaR 95% (daily)</div>
+          <div class="card-value red">$1,032 (0.99%)</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Avg Margin Utilization</div>
+          <div class="card-value neutral">7.53%</div>
+        </div>
+        <div class="card">
+          <div class="card-label">YTD Return</div>
+          <div class="card-value green">4.15%</div>
+        </div></div>
+
+  <div class="row">
+        <div class="chip">
+          <span class="chip-label">Net PnL</span>
+          <span class="chip-value">$4,150</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Trades</span>
+          <span class="chip-value">36</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Win Rate</span>
+          <span class="chip-value">63.89%</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Avg Trade</span>
+          <span class="chip-value">$115</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Best Trade</span>
+          <span class="chip-value">$1,094</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Worst Trade</span>
+          <span class="chip-value">$-2,130</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Max Drawdown</span>
+          <span class="chip-value">1.91%</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">CAGR (ann.)</span>
+          <span class="chip-value">31.91%</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Peak Utilization</span>
+          <span class="chip-value">39.47%</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Days in Market</span>
+          <span class="chip-value">29.73%</span>
+        </div></div>
+
+  <div class="card">
+    <h2>Equity Curve</h2>
+    
+    <svg viewBox="0 0 900 300" preserveAspectRatio="none" style="width:100%;height:auto">
+      <line x1="0" y1="0.0" x2="900" y2="0.0" stroke="#1f2733" stroke-width="1"/><line x1="0" y1="150.0" x2="900" y2="150.0" stroke="#1f2733" stroke-width="1"/><line x1="0" y1="300.0" x2="900" y2="300.0" stroke="#1f2733" stroke-width="1"/>
+      <polygon points="0,300 0.0,231.5 25.0,226.9 50.0,226.9 75.0,226.9 100.0,182.7 125.0,182.7 150.0,182.7 175.0,233.0 200.0,279.3 225.0,236.6 250.0,236.6 275.0,184.3 300.0,184.3 325.0,184.3 350.0,184.3 375.0,160.9 400.0,160.9 425.0,156.2 450.0,156.3 475.0,156.3 500.0,156.3 525.0,156.3 550.0,158.3 575.0,158.3 600.0,153.6 625.0,153.6 650.0,153.6 675.0,153.6 700.0,153.6 725.0,123.2 750.0,123.2 775.0,123.2 800.0,76.8 825.0,76.8 850.0,76.8 875.0,20.7 900.0,28.5 900,300" fill="#22c55e" opacity="0.12"/>
+      <polyline points="0.0,231.5 25.0,226.9 50.0,226.9 75.0,226.9 100.0,182.7 125.0,182.7 150.0,182.7 175.0,233.0 200.0,279.3 225.0,236.6 250.0,236.6 275.0,184.3 300.0,184.3 325.0,184.3 350.0,184.3 375.0,160.9 400.0,160.9 425.0,156.2 450.0,156.3 475.0,156.3 500.0,156.3 525.0,156.3 550.0,158.3 575.0,158.3 600.0,153.6 625.0,153.6 650.0,153.6 675.0,153.6 700.0,153.6 725.0,123.2 750.0,123.2 775.0,123.2 800.0,76.8 825.0,76.8 850.0,76.8 875.0,20.7 900.0,28.5" fill="none" stroke="#22c55e" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Monthly P&amp;L</h2>
+    <div class="months">
+        <div class="month-row">
+          <span>July 2026</span>
+          <span class="pos">$1,571</span>
+        </div>
+        <div class="month-row">
+          <span>August 2026</span>
+          <span class="pos">$2,579</span>
+        </div></div>
+  </div>
+
+  <footer>Starts at 100k; buying power and returns compound with equity. Annualized metrics use 252 trading days.</footer>
+</div>
+</body>
+</html>
