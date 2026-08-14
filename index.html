@@ -45,8 +45,34 @@
     font-variant-numeric: tabular-nums;
     font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
   }
+  .card-bt {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  .card-bt .bt-badge { opacity: 0.6; margin-right: 6px; }
   .green { color: var(--green); }
   .red { color: var(--red); }
+  .chip-bt {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .legend {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .sw { display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .sw-live { background: var(--green); }
+  .sw-bt { background: #f59e0b; }
   h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
   .chip {
@@ -58,15 +84,26 @@
   .chip-label { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
   .chip-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .months { display: flex; flex-direction: column; gap: 8px; }
-  .month-row {
+  .month-head {
     display: flex;
     justify-content: space-between;
+    padding: 8px 12px;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .month-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
     padding: 8px 12px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 8px;
     font-variant-numeric: tabular-nums;
   }
+  .month-row span:not(:first-child), .month-head span:not(:first-child) { text-align: right; }
   .pos { color: var(--green); }
   .neg { color: var(--red); }
   footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
@@ -76,75 +113,91 @@
 <div class="wrap">
   <header>
     <h1>Performance Dashboard</h1>
-    <div class="sub">Coverage: 2026-07-06 — 2026-08-14 &nbsp;·&nbsp; Source: export-TradeStation-2026-08-14.csv &nbsp;·&nbsp; Generated: 2026-08-14 16:27 · Excluded: $2 Put Credit Spread (6 trades)</div>
+    <div class="sub">Coverage: 2026-07-06 — 2026-08-14 &nbsp;·&nbsp; Live: export-TradeStation-2026-08-14.csv &nbsp;·&nbsp; Backtest: AM-Live-Test.csv &nbsp;·&nbsp; Generated: 2026-08-14 17:38 · Excluded: $2 Put Credit Spread (6 trades)</div>
   </header>
 
   <div class="grid">
         <div class="card">
-          <div class="card-label">Sharpe (252d)</div>
-          <div class="card-value green">2.67</div>
+          <div class="card-label">Sharpe (365d, 4% rf)</div>
+          <div class="card-value green">2.76</div>
+          <div class="card-bt"><span class="bt-badge">BT</span><span class="green">3.74</span></div>
         </div>
         <div class="card">
-          <div class="card-label">Sortino (252d)</div>
-          <div class="card-value green">4.10</div>
+          <div class="card-label">Sortino (365d, 4% rf)</div>
+          <div class="card-value green">4.20</div>
+          <div class="card-bt"><span class="bt-badge">BT</span><span class="green">6.70</span></div>
         </div>
         <div class="card">
           <div class="card-label">MAR</div>
-          <div class="card-value green">11.20</div>
+          <div class="card-value green">16.97</div>
+          <div class="card-bt"><span class="bt-badge">BT</span><span class="green">44.95</span></div>
         </div>
         <div class="card">
           <div class="card-label">cVaR 95% (daily)</div>
           <div class="card-value red">$1,124 (1.09%)</div>
+          <div class="card-bt"><span class="bt-badge">BT</span><span class="red">$946 (0.91%)</span></div>
         </div>
         <div class="card">
           <div class="card-label">Avg Margin Utilization</div>
-          <div class="card-value neutral">5.52%</div>
+          <div class="card-value ">5.52%</div>
+          <div class="card-bt"><span class="bt-badge">BT</span><span>—</span></div>
         </div>
         <div class="card">
           <div class="card-label">YTD Return</div>
           <div class="card-value green">3.14%</div>
+          <div class="card-bt"><span class="bt-badge">BT</span><span class="green">3.78%</span></div>
         </div></div>
 
   <div class="row">
         <div class="chip">
           <span class="chip-label">Net PnL</span>
           <span class="chip-value">$3,138</span>
+          <span class="chip-bt">BT $3,779</span>
         </div>
         <div class="chip">
           <span class="chip-label">Trades</span>
           <span class="chip-value">34</span>
+          <span class="chip-bt">BT 34</span>
         </div>
         <div class="chip">
           <span class="chip-label">Win Rate</span>
           <span class="chip-value">64.71%</span>
-        </div>
-        <div class="chip">
-          <span class="chip-label">Avg Trade</span>
-          <span class="chip-value">$92</span>
-        </div>
-        <div class="chip">
-          <span class="chip-label">Best Trade</span>
-          <span class="chip-value">$1,094</span>
-        </div>
-        <div class="chip">
-          <span class="chip-label">Worst Trade</span>
-          <span class="chip-value">$-2,130</span>
+          <span class="chip-bt">BT 64.71%</span>
         </div>
         <div class="chip">
           <span class="chip-label">Max Drawdown</span>
           <span class="chip-value">1.92%</span>
+          <span class="chip-bt">BT 0.92%</span>
         </div>
         <div class="chip">
           <span class="chip-label">CAGR (ann.)</span>
-          <span class="chip-value">21.49%</span>
+          <span class="chip-value">32.57%</span>
+          <span class="chip-bt">BT 41.50%</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Avg Trade</span>
+          <span class="chip-value">$92</span>
+          
+        </div>
+        <div class="chip">
+          <span class="chip-label">Best Trade</span>
+          <span class="chip-value">$1,094</span>
+          
+        </div>
+        <div class="chip">
+          <span class="chip-label">Worst Trade</span>
+          <span class="chip-value">$-2,130</span>
+          
         </div>
         <div class="chip">
           <span class="chip-label">Peak Utilization</span>
           <span class="chip-value">38.10%</span>
+          
         </div>
         <div class="chip">
           <span class="chip-label">Days in Market</span>
           <span class="chip-value">27.50%</span>
+          
         </div></div>
 
   <div class="card">
@@ -152,25 +205,30 @@
     
     <svg viewBox="0 0 900 300" preserveAspectRatio="none" style="width:100%;height:auto">
       <line x1="0" y1="0.0" x2="900" y2="0.0" stroke="#1f2733" stroke-width="1"/><line x1="0" y1="150.0" x2="900" y2="150.0" stroke="#1f2733" stroke-width="1"/><line x1="0" y1="300.0" x2="900" y2="300.0" stroke="#1f2733" stroke-width="1"/>
-      <polygon points="0,300 0.0,225.4 23.1,220.3 46.2,220.3 69.2,220.3 92.3,170.4 115.4,170.4 138.5,170.4 161.5,227.1 184.6,279.3 207.7,231.1 230.8,231.1 253.8,179.7 276.9,179.7 300.0,179.7 323.1,179.7 346.2,153.4 369.2,153.4 392.3,153.4 415.4,153.5 438.5,153.5 461.5,153.5 484.6,153.5 507.7,166.9 530.8,166.9 553.8,161.7 576.9,161.7 600.0,161.7 623.1,161.7 646.2,161.7 669.2,127.3 692.3,127.3 715.4,127.3 738.5,75.1 761.5,75.1 784.6,75.1 807.7,22.7 830.8,20.7 853.8,93.8 876.9,61.2 900.0,51.9 900,300" fill="#22c55e" opacity="0.12"/>
-      <polyline points="0.0,225.4 23.1,220.3 46.2,220.3 69.2,220.3 92.3,170.4 115.4,170.4 138.5,170.4 161.5,227.1 184.6,279.3 207.7,231.1 230.8,231.1 253.8,179.7 276.9,179.7 300.0,179.7 323.1,179.7 346.2,153.4 369.2,153.4 392.3,153.4 415.4,153.5 438.5,153.5 461.5,153.5 484.6,153.5 507.7,166.9 530.8,166.9 553.8,161.7 576.9,161.7 600.0,161.7 623.1,161.7 646.2,161.7 669.2,127.3 692.3,127.3 715.4,127.3 738.5,75.1 761.5,75.1 784.6,75.1 807.7,22.7 830.8,20.7 853.8,93.8 876.9,61.2 900.0,51.9" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <polygon points="0,300 0.0,230.5 23.1,225.9 46.2,225.9 69.2,225.9 92.3,180.8 115.4,180.8 138.5,180.8 161.5,232.1 184.6,279.3 207.7,235.7 230.8,235.7 253.8,189.2 276.9,189.2 300.0,189.2 323.1,189.2 346.2,165.4 369.2,165.4 392.3,165.4 415.4,165.5 438.5,165.5 461.5,165.5 484.6,165.5 507.7,177.6 530.8,177.6 553.8,172.9 576.9,172.9 600.0,172.9 623.1,172.9 646.2,172.9 669.2,141.8 692.3,141.8 715.4,141.8 738.5,94.6 761.5,94.6 784.6,94.6 807.7,47.2 830.8,45.3 853.8,111.5 876.9,82.0 900.0,73.6 900,300" fill="#22c55e" opacity="0.08"/>
+      <polyline points="0.0,230.5 23.1,225.9 46.2,225.9 69.2,225.9 92.3,180.8 115.4,180.8 138.5,180.8 161.5,232.1 184.6,279.3 207.7,235.7 230.8,235.7 253.8,189.2 276.9,189.2 300.0,189.2 323.1,189.2 346.2,165.4 369.2,165.4 392.3,165.4 415.4,165.5 438.5,165.5 461.5,165.5 484.6,165.5 507.7,177.6 530.8,177.6 553.8,172.9 576.9,172.9 600.0,172.9 623.1,172.9 646.2,172.9 669.2,141.8 692.3,141.8 715.4,141.8 738.5,94.6 761.5,94.6 784.6,94.6 807.7,47.2 830.8,45.3 853.8,111.5 876.9,82.0 900.0,73.6" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <polyline points="0.0,229.8 23.1,228.5 46.2,228.5 69.2,228.5 92.3,179.7 115.4,179.7 138.5,179.7 161.5,189.0 184.6,180.0 207.7,216.2 230.8,216.2 253.8,204.0 276.9,204.0 300.0,204.0 323.1,182.4 346.2,162.2 369.2,162.2 392.3,162.2 415.4,168.0 438.5,168.0 461.5,168.0 484.6,146.1 507.7,191.4 530.8,191.4 553.8,177.1 576.9,177.1 600.0,177.1 623.1,177.1 646.2,176.8 669.2,152.1 692.3,152.1 715.4,152.1 738.5,73.4 761.5,73.4 784.6,73.4 807.7,26.7 830.8,20.7 853.8,68.3 876.9,41.9 900.0,41.9" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4"/>
     </svg>
+    <div class="legend"><span><span class="sw sw-live"></span>Live</span><span><span class="sw sw-bt"></span>Backtest (AM-Live-Test.csv)</span></div>
   </div>
 
   <div class="card" style="margin-top:16px">
     <h2>Monthly P&amp;L</h2>
+    <div class="month-head"><span>Month</span><span>Live</span><span>Backtest</span></div>
     <div class="months">
         <div class="month-row">
           <span>July 2026</span>
           <span class="pos">$1,132</span>
+          <span class="pos">$1,047</span>
         </div>
         <div class="month-row">
           <span>August 2026</span>
           <span class="pos">$2,006</span>
+          <span class="pos">$2,732</span>
         </div></div>
   </div>
 
-  <footer>Starts at 100k; buying power and returns compound with equity. Annualized metrics use 252 trading days.</footer>
+  <footer>Starts at 100k; buying power and returns compound with equity. Annualized metrics use 365 days and a flat 4% risk-free rate (≈2026 3-month T-bill). BT = backtest on AM-Live-Test.csv (1-sec NBBO fills).</footer>
 </div>
 </body>
 </html>

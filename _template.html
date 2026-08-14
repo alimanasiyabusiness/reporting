@@ -45,8 +45,34 @@
     font-variant-numeric: tabular-nums;
     font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
   }
+  .card-bt {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  .card-bt .bt-badge { opacity: 0.6; margin-right: 6px; }
   .green { color: var(--green); }
   .red { color: var(--red); }
+  .chip-bt {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .legend {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .sw { display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .sw-live { background: var(--green); }
+  .sw-bt { background: #f59e0b; }
   h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
   .chip {
@@ -58,15 +84,26 @@
   .chip-label { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
   .chip-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .months { display: flex; flex-direction: column; gap: 8px; }
-  .month-row {
+  .month-head {
     display: flex;
     justify-content: space-between;
+    padding: 8px 12px;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .month-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
     padding: 8px 12px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 8px;
     font-variant-numeric: tabular-nums;
   }
+  .month-row span:not(:first-child), .month-head span:not(:first-child) { text-align: right; }
   .pos { color: var(--green); }
   .neg { color: var(--red); }
   footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
@@ -76,7 +113,7 @@
 <div class="wrap">
   <header>
     <h1>$title</h1>
-    <div class="sub">Coverage: $period &nbsp;·&nbsp; Source: $csv &nbsp;·&nbsp; Generated: $generated$excluded</div>
+    <div class="sub">Coverage: $period &nbsp;·&nbsp; Live: $csv &nbsp;·&nbsp; Backtest: $btcsv &nbsp;·&nbsp; Generated: $generated$excluded</div>
   </header>
 
   <div class="grid">$cards</div>
@@ -86,14 +123,16 @@
   <div class="card">
     <h2>Equity Curve</h2>
     $equity_svg
+    $equity_legend
   </div>
 
   <div class="card" style="margin-top:16px">
     <h2>Monthly P&amp;L</h2>
+    <div class="month-head"><span>Month</span><span>Live</span><span>Backtest</span></div>
     <div class="months">$months</div>
   </div>
 
-  <footer>Starts at 100k; buying power and returns compound with equity. Annualized metrics use 252 trading days.</footer>
+  <footer>Starts at 100k; buying power and returns compound with equity. Annualized metrics use 365 days and a flat 4% risk-free rate (≈2026 3-month T-bill). BT = backtest on AM-Live-Test.csv (1-sec NBBO fills).</footer>
 </div>
 </body>
 </html>
