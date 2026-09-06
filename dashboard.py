@@ -5,6 +5,8 @@ import os
 import statistics
 from datetime import date, datetime, timedelta
 
+import yfinance as yf
+
 
 # ============================================================
 # CONFIGURATION
@@ -29,6 +31,15 @@ OUTPUT_HTML = "index.html"
 
 TRADING_DAYS_PER_YEAR = 252
 RISK_FREE_RATE = 0.035
+
+# ------------------------------------------------------------
+# SGOV simulation
+# ------------------------------------------------------------
+# Percentage of total portfolio notionally held in SGOV at the
+# beginning of each trading day. The SGOV position is rebalanced
+# to this target weight daily as portfolio equity changes.
+SGOV_TICKER = "SGOV"
+SGOV_ALLOCATION = 0.85
 
 CVAR_LEVEL = 0.95
 
@@ -169,31 +180,70 @@ def load_trades_am(path):
 # DATE / DAILY DATA
 # ============================================================
 
-def is_trading_day(d):
+def load_sgov_returns(start_date, end_date):
     """
-    Basic trading-day definition.
+    Download daily SGOV total-return series from Yahoo Finance via
+    yfinance.
 
-    For Sharpe purposes we exclude Saturday/Sunday.
+    auto_adjust=True makes the returned Close series dividend-adjusted,
+    which is the appropriate series for a reinvested-total-return
+    simulation.
 
-    This intentionally does not attempt to reconstruct the
-    complete NYSE holiday calendar because the strategy's
-    exported trading dates are the actual dates represented
-    by the strategy.
+    end_date is inclusive to the caller, but yfinance's end parameter
+    is exclusive, so we request one extra calendar day.
     """
+    end_exclusive = end_date + timedelta(days=1)
 
-    return d.weekday() < 5
+    hist = yf.Ticker(SGOV_TICKER).history(
+        start=start_date.isoformat(),
+        end=end_exclusive.isoformat(),
+        interval="1d",
+        auto_adjust=True,
+        actions=False,
+        raise_errors=True,
+    )
+
+    if hist.empty:
+        raise SystemExit(
+            f"No historical data returned for {SGOV_TICKER}. "
+            "Check your internet connection or Yahoo Finance availability."
+        )
+
+    returns = {}
+    previous_close = None
+
+    for ts, row in hist.iterrows():
+        d = ts.date()
+
+        if d < start_date or d > end_date:
+            continue
+
+        close = float(row["Close"])
+
+        if previous_close is not None and previous_close > 0:
+            returns[d] = close / previous_close - 1.0
+        else:
+            returns[d] = 0.0
+
+        previous_close = close
+
+    if not returns:
+        raise SystemExit(
+            f"No usable daily returns returned for {SGOV_TICKER}."
+        )
+
+    return returns
 
 
-def daily_pnl(trades):
+def daily_pnl(trades, sgov_returns):
     """
-    Aggregate trade P&L by closing date.
+    Aggregate strategy P&L by closing date and align the portfolio
+    simulation to actual SGOV trading dates. This naturally excludes
+    weekends and exchange holidays.
 
-    Only trading days are returned.
-
-    Unlike the previous implementation, weekends are not
-    included in the return series.
+    Returns tuples:
+        (date, strategy_pnl, sgov_return)
     """
-
     start = min(t["open"] for t in trades)
     end = max(t["close"] for t in trades)
 
@@ -201,83 +251,74 @@ def daily_pnl(trades):
 
     for t in trades:
         d = t["close"]
-
-        by_day[d] = (
-            by_day.get(d, 0.0)
-            + t["pnl"]
-        )
+        by_day[d] = by_day.get(d, 0.0) + t["pnl"]
 
     days = []
 
-    d = start
-
-    while d <= end:
-
-        if is_trading_day(d):
+    for d in sorted(sgov_returns):
+        if start <= d <= end:
             days.append(
                 (
                     d,
-                    by_day.get(d, 0.0)
+                    by_day.get(d, 0.0),
+                    sgov_returns[d],
                 )
             )
 
-        d += timedelta(days=1)
+    if not days:
+        raise SystemExit(
+            "No overlapping SGOV trading days were found for the "
+            "strategy date range."
+        )
 
     return days
 
 
-def equity_curve(daily, start_capital):
-    points = []
+def build_payload(trades, sgov_returns):
+    daily = daily_pnl(trades, sgov_returns)
 
-    eq = start_capital
+    equity = STARTING_CAPITAL
+    returns = []
+    eq_curve = []
+    total_daily = []
+    strategy_daily = []
+    sgov_daily = []
+    equity_at_start = {}
 
-    for d, pnl in daily:
-        eq += pnl
+    for d, strategy_pnl, sgov_return in daily:
+        equity_at_start[d] = equity
 
-        points.append(
-            (
-                d,
-                eq
-            )
+        sgov_value = equity * SGOV_ALLOCATION
+        sgov_pnl = sgov_value * sgov_return
+        total_pnl = strategy_pnl + sgov_pnl
+
+        daily_return = (
+            total_pnl / equity
+            if equity != 0
+            else 0.0
         )
 
-    return points
+        returns.append(daily_return)
+        total_daily.append((d, total_pnl))
+        strategy_daily.append((d, strategy_pnl))
+        sgov_daily.append((d, sgov_pnl))
 
+        equity += total_pnl
+        eq_curve.append((d, equity))
 
-def build_payload(trades):
-    daily = daily_pnl(trades)
-
-    eq_curve = equity_curve(
-        daily,
-        STARTING_CAPITAL
-    )
-
-    returns = []
-
-    eq = STARTING_CAPITAL
-
-    for _, pnl in daily:
-
-        if eq != 0:
-            returns.append(
-                pnl / eq
-            )
-        else:
-            returns.append(0.0)
-
-        eq += pnl
-
-    points = (
-        [(eq_curve[0][0], STARTING_CAPITAL)]
-        + eq_curve
-    )
+    points = [
+        (eq_curve[0][0], STARTING_CAPITAL)
+    ] + eq_curve
 
     return {
-        "daily": daily,
+        "daily": total_daily,
+        "strategy_daily": strategy_daily,
+        "sgov_daily": sgov_daily,
         "equity": eq_curve,
+        "equity_at_start": equity_at_start,
         "returns": returns,
         "points": points,
-        "n_days": len(daily),
+        "n_days": len(total_daily),
         "trades": trades,
     }
 
@@ -434,6 +475,10 @@ def drawdown_stats(points):
 # MARGIN UTILIZATION
 # ============================================================
 
+def is_trading_day(d):
+    """Return True for weekdays (Mon-Fri)."""
+    return d.weekday() < 5
+
 def margin_utilization(
     trades,
     daily_days,
@@ -529,32 +574,29 @@ def dataset_stats(p, live):
     ]
 
     months = {}
+    strategy_months = {}
+    sgov_months = {}
 
     for d, pnl in p["daily"]:
+        months[(d.year, d.month)] = (
+            months.get((d.year, d.month), 0.0) + pnl
+        )
 
-        months[
-            (d.year, d.month)
-        ] = (
-            months.get(
-                (d.year, d.month),
-                0.0
-            )
-            + pnl
+    for d, pnl in p["strategy_daily"]:
+        strategy_months[(d.year, d.month)] = (
+            strategy_months.get((d.year, d.month), 0.0) + pnl
+        )
+
+    for d, pnl in p["sgov_daily"]:
+        sgov_months[(d.year, d.month)] = (
+            sgov_months.get((d.year, d.month), 0.0) + pnl
         )
 
     util = {}
 
     if live:
 
-        equity_at_start = {}
-
-        eq = STARTING_CAPITAL
-
-        for d, pnl in p["daily"]:
-
-            equity_at_start[d] = eq
-
-            eq += pnl
+        equity_at_start = p["equity_at_start"]
 
         avg, peak, invested = (
             margin_utilization(
@@ -590,6 +632,16 @@ def dataset_stats(p, live):
         "net_pnl": sum(
             pnl
             for _, pnl in p["daily"]
+        ),
+
+        "strategy_pnl": sum(
+            pnl
+            for _, pnl in p["strategy_daily"]
+        ),
+
+        "sgov_pnl": sum(
+            pnl
+            for _, pnl in p["sgov_daily"]
         ),
 
         "n_trades": len(
@@ -630,6 +682,10 @@ def dataset_stats(p, live):
         "max_dd_val": max_dd_val,
 
         "months": months,
+
+        "strategy_months": strategy_months,
+
+        "sgov_months": sgov_months,
 
         "util": util,
     }
@@ -1104,6 +1160,24 @@ def build_html(stats, meta):
                     b["net_pnl"]
                 )
             ),
+            chip_html(
+                "0DTE Strategy P&L",
+                fmt_money(l["strategy_pnl"]),
+                fmt_money(b["strategy_pnl"])
+            ),
+
+            chip_html(
+                "SGOV P&L (85%)",
+                fmt_money(l["sgov_pnl"]),
+                fmt_money(b["sgov_pnl"])
+            ),
+
+            chip_html(
+                "SGOV Allocation",
+                fmt_pct(SGOV_ALLOCATION),
+                fmt_pct(SGOV_ALLOCATION)
+            ),
+
 
             chip_html(
                 "Trades",
@@ -1550,6 +1624,14 @@ h1 {{
         daily RF = 3.5% / 252 ·
         population standard deviation.
 
+        <br><br>
+
+        <strong>SGOV simulation:</strong>
+        85% of beginning-of-day portfolio equity is allocated to SGOV,
+        using Yahoo Finance dividend-adjusted daily prices. SGOV gains
+        are reinvested and the target allocation scales automatically as
+        portfolio equity changes.
+
     </div>
 
 
@@ -1673,12 +1755,24 @@ def main():
     # Build datasets
     # --------------------------------------------------------
 
+    all_trades = live_trades + bt_trades
+
+    sgov_start = min(t["open"] for t in all_trades)
+    sgov_end = max(t["close"] for t in all_trades)
+
+    sgov_returns = load_sgov_returns(
+        sgov_start,
+        sgov_end
+    )
+
     live = build_payload(
-        live_trades
+        live_trades,
+        sgov_returns
     )
 
     bt = build_payload(
-        bt_trades
+        bt_trades,
+        sgov_returns
     )
 
 
@@ -1824,6 +1918,11 @@ def main():
         f"Backtest Sharpe: "
         f"{bt_stats['sharpe_raw']:.4f}"
     )
+
+    print()
+    print(f"SGOV allocation: {SGOV_ALLOCATION:.0%}")
+    print(f"Live strategy P&L: {live_stats['strategy_pnl']:,.2f}")
+    print(f"Live SGOV P&L: {live_stats['sgov_pnl']:,.2f}")
 
 
 if __name__ == "__main__":
