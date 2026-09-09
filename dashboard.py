@@ -30,7 +30,7 @@ OUTPUT_HTML = "index.html"
 # ------------------------------------------------------------
 
 TRADING_DAYS_PER_YEAR = 252
-RISK_FREE_RATE = 0.035
+RISK_FREE_RATE = 0.000
 
 # ------------------------------------------------------------
 # SGOV simulation
