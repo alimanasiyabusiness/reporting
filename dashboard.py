@@ -1077,7 +1077,7 @@ def build_html(stats, meta):
         [
 
             card_html(
-                "Sharpe (252d, 3.5% RF)",
+                "Sharpe (252d)",
                 fmt_num(
                     l["sharpe_raw"]
                 ),
@@ -1093,7 +1093,7 @@ def build_html(stats, meta):
             ),
 
             card_html(
-                "Sortino (252d, 3.5% RF)",
+                "Sortino (252d)",
                 fmt_num(
                     l["sortino_raw"]
                 ),
@@ -1607,8 +1607,6 @@ h1 {{
     <div class="subtitle">
 
         {meta["period"]}
-        &nbsp;·&nbsp;
-        {meta["csv"]}
 
     </div>
 
@@ -1634,8 +1632,6 @@ h1 {{
 
         Trading days only ·
         252-day annualization ·
-        3.5% annual risk-free rate ·
-        daily RF = 3.5% / 252 ·
         population standard deviation.
 
         <br><br>
