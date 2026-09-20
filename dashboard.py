@@ -12,7 +12,7 @@ import yfinance as yf
 # CONFIGURATION
 # ============================================================
 
-STARTING_CAPITAL = 100_000
+STARTING_CAPITAL = 500_000
 
 CSV_PATTERN = "export-*.csv"
 BACKTEST_CSV = "AM-Live-Test.csv"
@@ -107,6 +107,7 @@ def load_trades(path):
                         "open": open_date,
                         "pnl": pnl,
                         "bp": bp,
+                        "trade_type": row["TradeType"],
                         "strategy": strategy,
                     }
                 )
@@ -484,21 +485,34 @@ def margin_utilization(
     daily_days,
     equity_at_day_start
 ):
+
+    groups = {}
+    for t in trades:
+        key = (t.get("strategy", ""), t["open"])
+        groups.setdefault(key, []).append(t)
+
     per_day = {}
 
-    for t in trades:
+    for (strat, _open), grp in groups.items():
+        types = {t.get("trade_type", "") for t in grp}
 
-        d = t["open"]
+        is_ic = (
+            len(grp) == 2
+            and "CallSpread" in types
+            and "PutSpread" in types
+        )
 
-        while d <= t["close"]:
+        bp_total = (
+            max(t["bp"] for t in grp)
+            if is_ic
+            else sum(t["bp"] for t in grp)
+        )
 
+        d = _open
+        close = max(t["close"] for t in grp)
+        while d <= close:
             if is_trading_day(d):
-
-                per_day[d] = (
-                    per_day.get(d, 0.0)
-                    + t["bp"]
-                )
-
+                per_day[d] = per_day.get(d, 0.0) + bp_total
             d += timedelta(days=1)
 
     day_utils = []
