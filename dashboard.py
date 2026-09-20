@@ -40,6 +40,7 @@ RISK_FREE_RATE = 0.000
 # to this target weight daily as portfolio equity changes.
 SGOV_TICKER = "SGOV"
 SGOV_ALLOCATION = 0.85
+SPX_TICKER = "^GSPC"
 
 CVAR_LEVEL = 0.95
 
@@ -236,6 +237,53 @@ def load_sgov_returns(start_date, end_date):
     return returns
 
 
+def load_spx_returns(start_date, end_date):
+    """
+    Download daily S&P 500 total-return series from Yahoo Finance.
+    """
+    end_exclusive = end_date + timedelta(days=1)
+
+    hist = yf.Ticker(SPX_TICKER).history(
+        start=start_date.isoformat(),
+        end=end_exclusive.isoformat(),
+        interval="1d",
+        auto_adjust=True,
+        actions=False,
+        raise_errors=True,
+    )
+
+    if hist.empty:
+        raise SystemExit(
+            f"No historical data returned for {SPX_TICKER}. "
+            "Check your internet connection or Yahoo Finance availability."
+        )
+
+    returns = {}
+    previous_close = None
+
+    for ts, row in hist.iterrows():
+        d = ts.date()
+
+        if d < start_date or d > end_date:
+            continue
+
+        close = float(row["Close"])
+
+        if previous_close is not None and previous_close > 0:
+            returns[d] = close / previous_close - 1.0
+        else:
+            returns[d] = 0.0
+
+        previous_close = close
+
+    if not returns:
+        raise SystemExit(
+            f"No usable daily returns returned for {SPX_TICKER}."
+        )
+
+    return returns
+
+
 def daily_pnl(trades, sgov_returns):
     """
     Aggregate strategy P&L by closing date and align the portfolio
@@ -275,7 +323,7 @@ def daily_pnl(trades, sgov_returns):
     return days
 
 
-def build_payload(trades, sgov_returns):
+def build_payload(trades, sgov_returns, spx_returns):
     daily = daily_pnl(trades, sgov_returns)
 
     equity = STARTING_CAPITAL
@@ -285,6 +333,7 @@ def build_payload(trades, sgov_returns):
     strategy_daily = []
     sgov_daily = []
     equity_at_start = {}
+    spx_daily = []
 
     for d, strategy_pnl, sgov_return in daily:
         equity_at_start[d] = equity
@@ -303,6 +352,7 @@ def build_payload(trades, sgov_returns):
         total_daily.append((d, total_pnl))
         strategy_daily.append((d, strategy_pnl))
         sgov_daily.append((d, sgov_pnl))
+        spx_daily.append((d, spx_returns.get(d, 0.0)))
 
         equity += total_pnl
         eq_curve.append((d, equity))
@@ -318,6 +368,7 @@ def build_payload(trades, sgov_returns):
         "equity": eq_curve,
         "equity_at_start": equity_at_start,
         "returns": returns,
+        "spx_returns": [r for _, r in spx_daily],
         "points": points,
         "n_days": len(total_daily),
         "trades": trades,
@@ -702,6 +753,47 @@ def dataset_stats(p, live):
         "sgov_months": sgov_months,
 
         "util": util,
+
+        "portfolio_vol": (
+            statistics.pstdev(returns)
+            * math.sqrt(TRADING_DAYS_PER_YEAR)
+            if returns
+            else 0.0
+        ),
+
+        "spx_vol": (
+            statistics.pstdev(p["spx_returns"])
+            * math.sqrt(TRADING_DAYS_PER_YEAR)
+            if p["spx_returns"]
+            else 0.0
+        ),
+
+        "vol_ratio": (
+            statistics.pstdev(returns)
+            / statistics.pstdev(p["spx_returns"])
+            if returns
+            and p["spx_returns"]
+            and statistics.pstdev(p["spx_returns"]) > 0
+            else 0.0
+        ),
+
+        "correlation": (
+            sum(
+                (r - statistics.fmean(returns))
+                * (s - statistics.fmean(p["spx_returns"]))
+                for r, s in zip(returns, p["spx_returns"])
+            )
+            / (
+                len(returns)
+                * statistics.pstdev(returns)
+                * statistics.pstdev(p["spx_returns"])
+            )
+            if returns
+            and p["spx_returns"]
+            and statistics.pstdev(returns) > 0
+            and statistics.pstdev(p["spx_returns"]) > 0
+            else 0.0
+        ),
     }
 
 
@@ -958,6 +1050,49 @@ def card_html(
     """
 
 
+def split_card_html(
+    label,
+    left_label,
+    left_val,
+    left_color,
+    right_label,
+    right_val,
+    right_color,
+):
+
+    return f"""
+    <div class="card">
+
+        <div class="card-label">
+            {label}
+        </div>
+
+        <div class="card-split">
+
+            <div>
+                <div class="card-sub-label">
+                    {left_label}
+                </div>
+                <div class="card-value {left_color}">
+                    {left_val}
+                </div>
+            </div>
+
+            <div>
+                <div class="card-sub-label">
+                    {right_label}
+                </div>
+                <div class="card-value {right_color}">
+                    {right_val}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    """
+
+
 def chip_html(
     label,
     value,
@@ -1157,6 +1292,28 @@ def build_html(stats, meta):
                     ytd(b),
                     0.0
                 )
+            ),
+
+            split_card_html(
+                "Volatility (252d)",
+                "Portfolio",
+                fmt_pct(l["portfolio_vol"]),
+                color_of(l["portfolio_vol"], 0.0),
+                "SPX",
+                fmt_pct(l["spx_vol"]),
+                color_of(l["spx_vol"], 0.0),
+            ),
+
+            split_card_html(
+                "vs SPX",
+                "Vol Ratio",
+                f'{l["vol_ratio"]:.2f}x',
+                "green" if l["vol_ratio"] < 1 else "red",
+                "Correlation",
+                f'{l["correlation"]:.2f}',
+                "green" if l["correlation"] > 0.5 else (
+                    "red" if l["correlation"] < 0 else ""
+                ),
             ),
 
         ]
@@ -1407,6 +1564,32 @@ h1 {{
     border-radius: 4px;
 
     margin-right: 5px;
+
+}}
+
+.card-split {{
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 14px;
+
+}}
+
+.card-sub-label {{
+
+    font-size: 11px;
+
+    color: #7f8a99;
+
+    margin-bottom: 4px;
+
+}}
+
+.card-split .card-value {{
+
+    font-size: 22px;
 
 }}
 
@@ -1775,14 +1958,21 @@ def main():
         sgov_end
     )
 
+    spx_returns = load_spx_returns(
+        sgov_start,
+        sgov_end
+    )
+
     live = build_payload(
         live_trades,
-        sgov_returns
+        sgov_returns,
+        spx_returns
     )
 
     bt = build_payload(
         bt_trades,
-        sgov_returns
+        sgov_returns,
+        spx_returns
     )
 
 
@@ -1933,6 +2123,13 @@ def main():
     print(f"SGOV allocation: {SGOV_ALLOCATION:.0%}")
     print(f"Live strategy P&L: {live_stats['strategy_pnl']:,.2f}")
     print(f"Live SGOV P&L: {live_stats['sgov_pnl']:,.2f}")
+    print()
+    print(
+        f"Portfolio vol: {live_stats['portfolio_vol']:.1%}   "
+        f"SPX vol: {live_stats['spx_vol']:.1%}   "
+        f"Ratio: {live_stats['vol_ratio']:.2f}x   "
+        f"Corr: {live_stats['correlation']:.2f}"
+    )
 
 
 if __name__ == "__main__":

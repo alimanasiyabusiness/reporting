@@ -132,6 +132,32 @@ h1 {
 
 }
 
+.card-split {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 14px;
+
+}
+
+.card-sub-label {
+
+    font-size: 11px;
+
+    color: #7f8a99;
+
+    margin-bottom: 4px;
+
+}
+
+.card-split .card-value {
+
+    font-size: 22px;
+
+}
+
 .green {
     color: #4ade80;
 }
@@ -461,6 +487,66 @@ h1 {
             </span>
         </div>
         
+
+    </div>
+    
+    <div class="card">
+
+        <div class="card-label">
+            Volatility (252d)
+        </div>
+
+        <div class="card-split">
+
+            <div>
+                <div class="card-sub-label">
+                    Portfolio
+                </div>
+                <div class="card-value green">
+                    1.58%
+                </div>
+            </div>
+
+            <div>
+                <div class="card-sub-label">
+                    SPX
+                </div>
+                <div class="card-value green">
+                    11.21%
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    
+    <div class="card">
+
+        <div class="card-label">
+            vs SPX
+        </div>
+
+        <div class="card-split">
+
+            <div>
+                <div class="card-sub-label">
+                    Vol Ratio
+                </div>
+                <div class="card-value green">
+                    0.14x
+                </div>
+            </div>
+
+            <div>
+                <div class="card-sub-label">
+                    Correlation
+                </div>
+                <div class="card-value ">
+                    0.04
+                </div>
+            </div>
+
+        </div>
 
     </div>
     
