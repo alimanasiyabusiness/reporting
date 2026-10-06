@@ -659,6 +659,23 @@ def dataset_stats(p, live):
 
     util = {}
 
+    equity_at_start_all = p["equity_at_start"]
+
+    # True monthly return: month PnL / equity at start of
+    # first trading day in that month.
+    first_day_equity = {}
+    for d, _ in p["daily"]:
+        key = (d.year, d.month)
+        if key not in first_day_equity:
+            first_day_equity[key] = equity_at_start_all.get(d, 0.0)
+
+    months_pct = {}
+    for k, pnl in months.items():
+        eq = first_day_equity.get(k, 0.0)
+        months_pct[k] = (pnl / eq if eq else 0.0)
+
+    util = {}
+
     if live:
 
         equity_at_start = p["equity_at_start"]
@@ -748,6 +765,8 @@ def dataset_stats(p, live):
 
         "months": months,
 
+        "months_pct": months_pct,
+
         "strategy_months": strategy_months,
 
         "sgov_months": sgov_months,
@@ -800,10 +819,6 @@ def dataset_stats(p, live):
 # ============================================================
 # FORMATTING
 # ============================================================
-
-def fmt_money(v):
-    return f"${v:,.0f}"
-
 
 def fmt_pct(v):
     return f"{v * 100:,.2f}%"
@@ -1164,7 +1179,7 @@ def monthly_html(
                     if lv >= 0
                     else 'neg'
                 }">
-                    {fmt_money(lv)}
+                    {fmt_pct(lv)}
                 </span>
 
                 <span class="{
@@ -1172,7 +1187,7 @@ def monthly_html(
                     if bv >= 0
                     else 'neg'
                 }">
-                    {fmt_money(bv)}
+                    {fmt_pct(bv)}
                 </span>
 
             </div>
@@ -1198,8 +1213,7 @@ def build_html(stats, meta):
     )
 
     cvar_label = lambda s: (
-        f"${abs(s['cvar']) * s['end_eq']:,.0f}"
-        f" ({fmt_pct(abs(s['cvar']))})"
+        f"{fmt_pct(abs(s['cvar']))}"
     )
 
     mar_label = lambda s: (
@@ -1324,29 +1338,14 @@ def build_html(stats, meta):
 
             chip_html(
                 "Net PnL",
-                fmt_money(
+                fmt_pct(
                     l["net_pnl"]
+                    / STARTING_CAPITAL
                 ),
-                fmt_money(
+                fmt_pct(
                     b["net_pnl"]
+                    / STARTING_CAPITAL
                 )
-            ),
-            chip_html(
-                "0DTE Strategy P&L",
-                fmt_money(l["strategy_pnl"]),
-                fmt_money(b["strategy_pnl"])
-            ),
-
-            chip_html(
-                "SGOV P&L (85%)",
-                fmt_money(l["sgov_pnl"]),
-                fmt_money(b["sgov_pnl"])
-            ),
-
-            chip_html(
-                "SGOV Allocation",
-                fmt_pct(SGOV_ALLOCATION),
-                fmt_pct(SGOV_ALLOCATION)
             ),
 
 
@@ -1392,22 +1391,25 @@ def build_html(stats, meta):
 
             chip_html(
                 "Avg Trade",
-                fmt_money(
+                fmt_pct(
                     l["avg_trade"]
+                    / STARTING_CAPITAL
                 )
             ),
 
             chip_html(
                 "Best Trade",
-                fmt_money(
+                fmt_pct(
                     l["best_trade"]
+                    / STARTING_CAPITAL
                 )
             ),
 
             chip_html(
                 "Worst Trade",
-                fmt_money(
+                fmt_pct(
                     l["worst_trade"]
+                    / STARTING_CAPITAL
                 )
             ),
 
@@ -1429,8 +1431,8 @@ def build_html(stats, meta):
     )
 
     months = monthly_html(
-        l["months"],
-        b["months"]
+        l["months_pct"],
+        b["months_pct"]
     )
 
     return f"""
@@ -1806,29 +1808,6 @@ h1 {{
 
 
     <!-- ============================================ -->
-    <!-- SHARPE METHODOLOGY                           -->
-    <!-- ============================================ -->
-
-    <div class="info">
-
-        <strong>Sharpe methodology:</strong>
-
-        Trading days only ·
-        252-day annualization ·
-        population standard deviation.
-
-        <br><br>
-
-        <strong>SGOV simulation:</strong>
-        85% of beginning-of-day portfolio equity is allocated to SGOV,
-        using Yahoo Finance dividend-adjusted daily prices. SGOV gains
-        are reinvested and the target allocation scales automatically as
-        portfolio equity changes.
-
-    </div>
-
-
-    <!-- ============================================ -->
     <!-- SUMMARY                                      -->
     <!-- ============================================ -->
 
@@ -1877,13 +1856,13 @@ h1 {{
 
 
     <!-- ============================================ -->
-    <!-- MONTHLY P&L                                  -->
+    <!-- MONTHLY RETURN                               -->
     <!-- ============================================ -->
 
     <div class="section">
 
         <div class="section-title">
-            Monthly P&L
+            Monthly Return
         </div>
 
         <div class="month-row month-header">
