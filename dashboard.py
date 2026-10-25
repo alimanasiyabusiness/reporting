@@ -5,7 +5,19 @@ import os
 import statistics
 from datetime import date, datetime, timedelta
 
-import yfinance as yf
+try:
+    import yfinance as yf
+except ModuleNotFoundError as exc:
+    if exc.name != "yfinance":
+        raise
+
+    raise SystemExit(
+        "Missing dependency 'yfinance'. Set up the project environment with:\n"
+        "  python3 -m venv .venv\n"
+        "  source .venv/bin/activate\n"
+        "  python -m pip install -r requirements.txt\n"
+        "Then run: python3 dashboard.py"
+    ) from None
 
 
 # ============================================================
@@ -998,6 +1010,352 @@ def svg_equity_overlay(
     """
 
 
+def cumulative_returns(daily_returns):
+    equity = 1.0
+    values = []
+
+    for daily_return in daily_returns:
+        equity *= 1.0 + daily_return
+        values.append(equity - 1.0)
+
+    return values
+
+
+def progressive_ema(values, period=10):
+    if period <= 0:
+        raise ValueError("period must be positive")
+
+    values = list(values)
+
+    if not values:
+        return []
+
+    alpha = 2.0 / (period + 1)
+    smoothed = [values[0]]
+
+    for value in values[1:]:
+        smoothed.append(
+            alpha * value
+            + (1.0 - alpha) * smoothed[-1]
+        )
+
+    return smoothed
+
+
+def svg_cumulative_daily_returns(
+    daily_returns,
+    width=1200,
+    height=360,
+):
+    daily_returns = list(daily_returns)
+    left = 62
+    right = 62
+    top = 18
+    bottom = 42
+    plot_width = max(1, width - left - right)
+    plot_height = max(1, height - top - bottom)
+
+    if not daily_returns:
+        return f"""
+        <svg
+            width="{width}"
+            height="{height}"
+            viewBox="0 0 {width} {height}"
+            role="img"
+            aria-label="Cumulative and daily portfolio returns"
+            style="width:100%;height:auto;display:block"
+        >
+            <title>Cumulative &amp; Daily Returns</title>
+            <text
+                x="{width / 2:.1f}"
+                y="{height / 2:.1f}"
+                fill="#8b95a5"
+                font-size="13"
+                text-anchor="middle"
+            >No daily return data</text>
+        </svg>
+        """
+
+    dates = [day for day, _ in daily_returns]
+    raw_returns = [float(value) for _, value in daily_returns]
+    daily_pct = [value * 100.0 for value in raw_returns]
+    cumulative_pct = [
+        value * 100.0
+        for value in cumulative_returns(raw_returns)
+    ]
+    ema_pct = [
+        value * 100.0
+        for value in progressive_ema(raw_returns, period=10)
+    ]
+
+    daily_limit = max(
+        0.1,
+        max(abs(value) for value in daily_pct) * 1.12,
+    )
+
+    cumulative_low = min(0.0, min(cumulative_pct))
+    cumulative_high = max(0.0, max(cumulative_pct))
+    cumulative_span = cumulative_high - cumulative_low
+    cumulative_padding = max(cumulative_span * 0.08, 0.5)
+    cumulative_low -= cumulative_padding
+    cumulative_high += cumulative_padding
+
+    def x_position(index):
+        if len(daily_returns) == 1:
+            return left + plot_width / 2
+
+        return left + plot_width * index / (len(daily_returns) - 1)
+
+    def daily_y(value):
+        return top + (daily_limit - value) / (2.0 * daily_limit) * plot_height
+
+    def cumulative_y(value):
+        return top + (
+            (cumulative_high - value)
+            / (cumulative_high - cumulative_low)
+            * plot_height
+        )
+
+    cumulative_points = " ".join(
+        f"{x_position(index):.1f},{cumulative_y(value):.1f}"
+        for index, value in enumerate(cumulative_pct)
+    )
+    ema_points = " ".join(
+        f"{x_position(index):.1f},{daily_y(value):.1f}"
+        for index, value in enumerate(ema_pct)
+    )
+
+    elements = [
+        f"""
+        <svg
+            width="{width}"
+            height="{height}"
+            viewBox="0 0 {width} {height}"
+            role="img"
+            aria-label="Cumulative and daily portfolio returns"
+            style="width:100%;height:auto;display:block"
+        >
+            <title>Cumulative &amp; Daily Returns</title>
+            <desc>
+                Daily portfolio returns, their progressive 10-day EMA, and
+                the compounded cumulative portfolio return.
+            </desc>
+        """
+    ]
+
+    for tick in range(5):
+        fraction = tick / 4.0
+        y = top + fraction * plot_height
+        daily_value = daily_limit * (1.0 - 2.0 * fraction)
+        cumulative_value = cumulative_high - (
+            cumulative_high - cumulative_low
+        ) * fraction
+
+        elements.append(
+            f"""
+            <line
+                x1="{left}"
+                y1="{y:.1f}"
+                x2="{width - right}"
+                y2="{y:.1f}"
+                stroke="#283241"
+                stroke-width="1"
+            />
+            <text
+                x="{left - 9}"
+                y="{y + 3.5:.1f}"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="end"
+            >{daily_value:+.1f}%</text>
+            <text
+                x="{width - right + 9}"
+                y="{y + 3.5:.1f}"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="start"
+            >{cumulative_value:+.1f}%</text>
+            """
+        )
+
+    bar_slot = plot_width / max(1, len(daily_returns) - 1)
+    bar_width = min(9.0, max(2.0, bar_slot * 0.68))
+    zero_y = daily_y(0.0)
+    bar_elements = []
+
+    for index, ((day, _), value) in enumerate(zip(daily_returns, daily_pct)):
+        if value == 0.0:
+            continue
+
+        value_y = daily_y(value)
+        bar_height = max(0.7, abs(zero_y - value_y))
+        bar_y = min(zero_y, value_y)
+        positive = value >= 0
+        color = "#34d399" if positive else "#fb7185"
+        direction = "positive" if positive else "negative"
+        x = x_position(index) - bar_width / 2
+
+        bar_elements.append(
+            f"""
+            <rect
+                class="daily-bar"
+                data-direction="{direction}"
+                x="{x:.1f}"
+                y="{bar_y:.1f}"
+                width="{bar_width:.1f}"
+                height="{bar_height:.1f}"
+                fill="{color}"
+                opacity="0.9"
+            >
+                <title>{day.isoformat()}: {value:+.2f}%</title>
+            </rect>
+            """
+        )
+
+    month_ticks = []
+    previous_month = None
+
+    for index, day in enumerate(dates):
+        month = (day.year, day.month)
+
+        if month != previous_month:
+            month_ticks.append((index, day))
+            previous_month = month
+
+    month_label_step = max(
+        1,
+        math.ceil(len(month_ticks) / max(2, plot_width // 68)),
+    )
+    last_label_x = None
+
+    for tick_index, (index, day) in enumerate(month_ticks):
+        x = x_position(index)
+        anchor = (
+            "start"
+            if x <= left + 20
+            else "end"
+            if x >= width - right - 20
+            else "middle"
+        )
+        label = (
+            day.strftime("%b %Y")
+            if day.month == 1
+            else day.strftime("%b")
+        )
+        show_label = tick_index % month_label_step == 0
+
+        if (
+            tick_index == len(month_ticks) - 1
+            and (
+                last_label_x is None
+                or x - last_label_x >= 68
+            )
+        ):
+            show_label = True
+
+        if show_label and last_label_x is not None and x - last_label_x < 68:
+            show_label = False
+
+        label_svg = ""
+
+        if show_label:
+            last_label_x = x
+            label_svg = f"""
+            <text
+                class="month-label"
+                x="{x:.1f}"
+                y="{height - 12}"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="{anchor}"
+            >{label}</text>
+            """
+
+        elements.append(
+            f"""
+            <line
+                x1="{x:.1f}"
+                y1="{top}"
+                x2="{x:.1f}"
+                y2="{height - bottom}"
+                stroke="#202a38"
+                stroke-width="1"
+            />
+            {label_svg}
+            """
+        )
+
+    elements.extend(bar_elements)
+
+    elements.append(
+        f"""
+        <polyline
+            class="cumulative-line"
+            points="{cumulative_points}"
+            fill="none"
+            stroke="#60a5fa"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+        />
+        <polyline
+            class="ema-line"
+            points="{ema_points}"
+            fill="none"
+            stroke="#f59e0b"
+            stroke-width="2"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+        />
+        """
+    )
+
+    if len(daily_returns) == 1:
+        x = x_position(0)
+        elements.append(
+            f"""
+            <circle
+                class="cumulative-point"
+                cx="{x:.1f}"
+                cy="{cumulative_y(cumulative_pct[0]):.1f}"
+                r="3"
+                fill="#60a5fa"
+            />
+            <circle
+                class="ema-point"
+                cx="{x:.1f}"
+                cy="{daily_y(ema_pct[0]):.1f}"
+                r="3"
+                fill="#f59e0b"
+            />
+            """
+        )
+
+    elements.append(
+        f"""
+        <text
+            x="16"
+            y="{top + plot_height / 2:.1f}"
+            fill="#8b95a5"
+            font-size="10"
+            text-anchor="middle"
+            transform="rotate(-90 16 {top + plot_height / 2:.1f})"
+        >Daily</text>
+        <text
+            x="{width - 12}"
+            y="{top + plot_height / 2:.1f}"
+            fill="#8b95a5"
+            font-size="10"
+            text-anchor="middle"
+            transform="rotate(90 {width - 12} {top + plot_height / 2:.1f})"
+        >Cumulative</text>
+        </svg>
+        """
+    )
+
+    return "".join(elements)
+
+
 # ============================================================
 # HTML HELPERS
 # ============================================================
@@ -1759,6 +2117,48 @@ h1 {{
 
 }}
 
+.daily-legend {{
+
+    flex-wrap: wrap;
+
+}}
+
+.sw-cumulative {{
+
+    width: 18px;
+    height: 2px;
+    border-radius: 0;
+    background: #60a5fa;
+
+}}
+
+.sw-daily-positive {{
+
+    width: 9px;
+    height: 9px;
+    border-radius: 1px;
+    background: #34d399;
+
+}}
+
+.sw-daily-negative {{
+
+    width: 9px;
+    height: 9px;
+    border-radius: 1px;
+    background: #fb7185;
+
+}}
+
+.sw-ema {{
+
+    width: 18px;
+    height: 2px;
+    border-radius: 0;
+    background: #f59e0b;
+
+}}
+
 .info {{
 
     margin-top: 20px;
@@ -1820,6 +2220,45 @@ h1 {{
         <div class="chips">
 
             {chips}
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================ -->
+    <!-- CUMULATIVE & DAILY RETURNS                   -->
+    <!-- ============================================ -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Cumulative &amp; Daily Returns
+        </div>
+
+        {stats["daily_returns_svg"]}
+
+        <div class="legend daily-legend">
+
+            <span>
+                <span class="sw sw-cumulative"></span>
+                Portfolio (cumulative)
+            </span>
+
+            <span>
+                <span class="sw sw-daily-positive"></span>
+                Daily +
+            </span>
+
+            <span>
+                <span class="sw sw-daily-negative"></span>
+                Daily −
+            </span>
+
+            <span>
+                <span class="sw sw-ema"></span>
+                10-EMA daily (progressive)
+            </span>
 
         </div>
 
@@ -1996,6 +2435,15 @@ def main():
             svg_equity_overlay(
                 live_series,
                 bt_series
+            ),
+
+        "daily_returns_svg":
+            svg_cumulative_daily_returns(
+                [
+                    (d, daily_return)
+                    for (d, _), daily_return
+                    in zip(live["daily"], live["returns"])
+                ]
             ),
 
     }
