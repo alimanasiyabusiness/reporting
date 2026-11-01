@@ -1,0 +1,2017 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    Performance Dashboard
+</title>
+
+<style>
+
+:root {
+    --background: #0b0f14;
+    --surface: #111821;
+    --surface-raised: #151f2a;
+    --border: #263342;
+    --text-primary: #e7edf5;
+    --text-muted: #a3afbd;
+    --text-subtle: #8795a5;
+    --live-accent: #34d399;
+    --backtest-accent: #f59e0b;
+    --positive: #4ade80;
+    --negative: #f87171;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+
+    margin: 0;
+
+    background: var(--background);
+
+    color: var(--text-primary);
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+}
+
+.container {
+
+    max-width: 1240px;
+
+    margin: auto;
+
+    padding: clamp(20px, 3vw, 32px);
+
+}
+
+h1 {
+
+    margin: 0 0 6px 0;
+
+    font-size: 28px;
+    letter-spacing: -0.02em;
+
+}
+
+.subtitle {
+
+    color: var(--text-subtle);
+
+    margin-bottom: 28px;
+
+}
+
+.grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(230px, 1fr)
+        );
+
+    gap: 14px;
+
+}
+
+.metric-groups {
+    display: grid;
+    gap: 22px;
+}
+
+.metric-group + .metric-group {
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+}
+
+.metric-group-title {
+    border-left: 3px solid var(--live-accent);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    margin: 0 0 12px;
+    padding-left: 10px;
+    text-transform: uppercase;
+}
+
+.metric-group--risk-context .metric-group-title {
+    border-left-color: var(--backtest-accent);
+}
+
+.card {
+
+    background: var(--surface);
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 14px;
+
+    padding: 18px;
+
+}
+
+.metric-card {
+    min-height: 132px;
+}
+
+.card-label {
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+    font-weight: 600;
+
+    margin-bottom: 14px;
+
+}
+
+.card-value {
+
+    color: var(--text-primary);
+    font-size: 32px;
+
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+
+}
+
+.comparison-row {
+    align-items: baseline;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.comparison-row--backtest {
+    border-top: 1px solid var(--border);
+    margin-top: 10px;
+    padding-top: 9px;
+}
+
+.comparison-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.comparison-label--live {
+    color: var(--live-accent);
+}
+
+.comparison-label--backtest {
+    color: var(--backtest-accent);
+}
+
+.card-bt-value {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.card-value.green,
+.card-bt-value.green {
+    color: var(--positive);
+}
+
+.card-value.red,
+.card-bt-value.red {
+    color: var(--negative);
+}
+
+.metric-card--split .card-label {
+    margin-bottom: 16px;
+}
+
+.card-split {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 14px;
+
+}
+
+.card-sub-label {
+
+    font-size: 11px;
+
+    color: var(--text-subtle);
+
+    margin-bottom: 4px;
+
+}
+
+.card-split .card-value {
+
+    font-size: 23px;
+
+}
+
+.green {
+    color: var(--positive);
+}
+
+.red {
+    color: var(--negative);
+}
+
+.pos {
+    color: var(--positive);
+}
+
+.neg {
+    color: var(--negative);
+}
+
+.section {
+
+    margin-top: 30px;
+
+    background: var(--surface);
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 12px;
+
+    padding: 20px;
+
+}
+
+.section-title {
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    margin-bottom: 18px;
+
+}
+
+.month-row {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        150px
+        150px;
+
+    padding:
+        10px 0;
+
+    border-bottom:
+        1px solid #202832;
+
+}
+
+.month-header {
+
+    color: #7f8a99;
+
+    font-size: 12px;
+
+}
+
+.legend {
+
+    display: flex;
+
+    gap: 20px;
+
+    margin-top: 12px;
+
+    font-size: 12px;
+
+    color: #9ca3af;
+
+}
+
+.sw {
+
+    display: inline-block;
+
+    width: 10px;
+
+    height: 10px;
+
+    border-radius: 50%;
+
+    margin-right: 6px;
+
+}
+
+.sw-live {
+
+    background: var(--live-accent);
+
+}
+
+.sw-bt {
+
+    background: var(--backtest-accent);
+
+}
+
+.daily-legend {
+
+    flex-wrap: wrap;
+
+}
+
+.sw-cumulative {
+
+    width: 18px;
+    height: 2px;
+    border-radius: 0;
+    background: #60a5fa;
+
+}
+
+.sw-daily-positive {
+
+    width: 9px;
+    height: 9px;
+    border-radius: 1px;
+    background: #34d399;
+
+}
+
+.sw-daily-negative {
+
+    width: 9px;
+    height: 9px;
+    border-radius: 1px;
+    background: #fb7185;
+
+}
+
+.sw-ema {
+
+    width: 18px;
+    height: 2px;
+    border-radius: 0;
+    background: #f59e0b;
+
+}
+
+.info {
+
+    margin-top: 20px;
+
+    padding: 12px 14px;
+
+    background: var(--surface-raised);
+
+    border-radius: 8px;
+
+    color: var(--text-subtle);
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>
+        Performance Dashboard
+    </h1>
+
+    <div class="subtitle">
+
+        2026-07-14 — 2026-10-26
+
+    </div>
+
+
+    <!-- ============================================ -->
+    <!-- PERFORMANCE CARDS                            -->
+    <!-- ============================================ -->
+
+    
+    <div class="metric-groups">
+        <section
+            class="metric-group metric-group--performance"
+            aria-labelledby="performance-heading"
+        >
+            <h2 class="metric-group-title" id="performance-heading">
+                Performance
+            </h2>
+            <div class="grid metric-grid">
+                
+    <div class="card metric-card">
+
+        <div class="card-label">
+            Sharpe (252d)
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">4.42</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">5.24</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card">
+
+        <div class="card-label">
+            Sortino (252d)
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">7.26</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">11.09</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card">
+
+        <div class="card-label">
+            MAR
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">17.35</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">26.10</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card">
+
+        <div class="card-label">
+            YTD Return
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value green">2.09%</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value green">2.71%</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card">
+
+        <div class="card-label">
+            CAGR (ann.)
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">7.31%</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">9.54%</span>
+        </div>
+
+    </div>
+    
+            </div>
+        </section>
+
+        <section
+            class="metric-group metric-group--risk-context"
+            aria-labelledby="risk-context-heading"
+        >
+            <h2 class="metric-group-title" id="risk-context-heading">
+                Risk &amp; Context
+            </h2>
+            <div class="grid metric-grid">
+                
+    <div class="card metric-card">
+
+        <div class="card-label">
+            cVaR 95% (daily)
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">0.22%</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">0.18%</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card">
+
+        <div class="card-label">
+            Max Drawdown
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">0.42%</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">0.37%</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card">
+
+        <div class="card-label">
+            Avg Margin Utilization
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">0.45%</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">—</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card">
+
+        <div class="card-label">
+            Peak Utilization
+        </div>
+
+        <div class="comparison-row comparison-row--live">
+            <span class="comparison-label comparison-label--live">Live</span>
+            <span class="card-value">2.12%</span>
+        </div>
+
+        <div class="comparison-row comparison-row--backtest">
+            <span class="comparison-label comparison-label--backtest">Backtest</span>
+            <span class="card-bt-value">—</span>
+        </div>
+
+    </div>
+    
+    <div class="card metric-card metric-card--split">
+
+        <div class="card-label">
+            Volatility (252d)
+        </div>
+
+        <div class="card-split">
+
+            <div>
+                <div class="card-sub-label">
+                    Portfolio
+                </div>
+                <div class="card-value">
+                    1.60%
+                </div>
+            </div>
+
+            <div>
+                <div class="card-sub-label">
+                    SPX
+                </div>
+                <div class="card-value">
+                    11.01%
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    
+    <div class="card metric-card metric-card--split">
+
+        <div class="card-label">
+            vs SPX
+        </div>
+
+        <div class="card-split">
+
+            <div>
+                <div class="card-sub-label">
+                    Vol Ratio
+                </div>
+                <div class="card-value">
+                    0.15x
+                </div>
+            </div>
+
+            <div>
+                <div class="card-sub-label">
+                    Correlation
+                </div>
+                <div class="card-value">
+                    0.02
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    
+            </div>
+        </section>
+    </div>
+    
+
+
+    <!-- ============================================ -->
+    <!-- CUMULATIVE & DAILY RETURNS                   -->
+    <!-- ============================================ -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Cumulative &amp; Daily Returns
+        </div>
+
+        
+        <svg
+            width="1200"
+            height="360"
+            viewBox="0 0 1200 360"
+            role="img"
+            aria-label="Cumulative and daily portfolio returns"
+            style="width:100%;height:auto;display:block"
+        >
+            <title>Cumulative &amp; Daily Returns</title>
+            <desc>
+                Daily portfolio returns, their progressive 10-day EMA, and
+                the compounded cumulative portfolio return.
+            </desc>
+        
+            <line
+                x1="62"
+                y1="18.0"
+                x2="1138"
+                y2="18.0"
+                stroke="#283241"
+                stroke-width="1"
+            />
+            <text
+                x="53"
+                y="21.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="end"
+            >+0.3%</text>
+            <text
+                x="1147"
+                y="21.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="start"
+            >+2.6%</text>
+            
+            <line
+                x1="62"
+                y1="93.0"
+                x2="1138"
+                y2="93.0"
+                stroke="#283241"
+                stroke-width="1"
+            />
+            <text
+                x="53"
+                y="96.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="end"
+            >+0.2%</text>
+            <text
+                x="1147"
+                y="96.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="start"
+            >+1.8%</text>
+            
+            <line
+                x1="62"
+                y1="168.0"
+                x2="1138"
+                y2="168.0"
+                stroke="#283241"
+                stroke-width="1"
+            />
+            <text
+                x="53"
+                y="171.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="end"
+            >+0.0%</text>
+            <text
+                x="1147"
+                y="171.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="start"
+            >+1.0%</text>
+            
+            <line
+                x1="62"
+                y1="243.0"
+                x2="1138"
+                y2="243.0"
+                stroke="#283241"
+                stroke-width="1"
+            />
+            <text
+                x="53"
+                y="246.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="end"
+            >-0.2%</text>
+            <text
+                x="1147"
+                y="246.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="start"
+            >+0.1%</text>
+            
+            <line
+                x1="62"
+                y1="318.0"
+                x2="1138"
+                y2="318.0"
+                stroke="#283241"
+                stroke-width="1"
+            />
+            <text
+                x="53"
+                y="321.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="end"
+            >-0.3%</text>
+            <text
+                x="1147"
+                y="321.5"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="start"
+            >-0.7%</text>
+            
+            <line
+                x1="62.0"
+                y1="18"
+                x2="62.0"
+                y2="318"
+                stroke="#202a38"
+                stroke-width="1"
+            />
+            
+            <text
+                class="month-label"
+                x="62.0"
+                y="348"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="start"
+            >Jul</text>
+            
+            
+            <line
+                x1="268.4"
+                y1="18"
+                x2="268.4"
+                y2="318"
+                stroke="#202a38"
+                stroke-width="1"
+            />
+            
+            <text
+                class="month-label"
+                x="268.4"
+                y="348"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="middle"
+            >Aug</text>
+            
+            
+            <line
+                x1="577.9"
+                y1="18"
+                x2="577.9"
+                y2="318"
+                stroke="#202a38"
+                stroke-width="1"
+            />
+            
+            <text
+                class="month-label"
+                x="577.9"
+                y="348"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="middle"
+            >Sep</text>
+            
+            
+            <line
+                x1="887.4"
+                y1="18"
+                x2="887.4"
+                y2="318"
+                stroke="#202a38"
+                stroke-width="1"
+            />
+            
+            <text
+                class="month-label"
+                x="887.4"
+                y="348"
+                fill="#8b95a5"
+                font-size="10"
+                text-anchor="middle"
+            >Oct</text>
+            
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="57.5"
+                y="168.0"
+                width="9.0"
+                height="90.9"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-07-14: -0.19%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="72.2"
+                y="75.4"
+                width="9.0"
+                height="92.6"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-15: +0.19%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="87.0"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-16: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="101.7"
+                y="65.6"
+                width="9.0"
+                height="102.4"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-17: +0.21%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="116.5"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-20: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="131.2"
+                y="118.0"
+                width="9.0"
+                height="50.0"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-21: +0.10%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="160.7"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-23: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="175.4"
+                y="155.5"
+                width="9.0"
+                height="12.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-24: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="190.2"
+                y="163.8"
+                width="9.0"
+                height="4.2"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-27: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="204.9"
+                y="168.0"
+                width="9.0"
+                height="18.9"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-07-28: -0.04%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="219.6"
+                y="159.5"
+                width="9.0"
+                height="8.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-29: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="234.4"
+                y="154.7"
+                width="9.0"
+                height="13.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-30: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="249.1"
+                y="159.5"
+                width="9.0"
+                height="8.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-07-31: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="263.9"
+                y="160.7"
+                width="9.0"
+                height="7.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-03: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="278.6"
+                y="104.1"
+                width="9.0"
+                height="63.9"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-04: +0.13%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="293.3"
+                y="159.5"
+                width="9.0"
+                height="8.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-05: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="308.1"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-06: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="322.8"
+                y="69.0"
+                width="9.0"
+                height="99.0"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-07: +0.21%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="337.6"
+                y="68.9"
+                width="9.0"
+                height="99.1"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-10: +0.21%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="352.3"
+                y="160.3"
+                width="9.0"
+                height="7.7"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-11: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="367.0"
+                y="168.0"
+                width="9.0"
+                height="121.9"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-08-12: -0.26%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="381.8"
+                y="107.3"
+                width="9.0"
+                height="60.7"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-13: +0.13%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="396.5"
+                y="139.3"
+                width="9.0"
+                height="28.7"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-14: +0.06%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="411.3"
+                y="168.0"
+                width="9.0"
+                height="14.6"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-08-17: -0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="426.0"
+                y="156.0"
+                width="9.0"
+                height="12.0"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-18: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="440.7"
+                y="159.5"
+                width="9.0"
+                height="8.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-19: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="470.2"
+                y="168.0"
+                width="9.0"
+                height="72.6"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-08-21: -0.15%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="485.0"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-24: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="499.7"
+                y="168.0"
+                width="9.0"
+                height="108.0"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-08-25: -0.23%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="514.4"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-26: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="529.2"
+                y="125.1"
+                width="9.0"
+                height="42.9"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-27: +0.09%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="543.9"
+                y="54.9"
+                width="9.0"
+                height="113.1"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-08-28: +0.24%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="573.4"
+                y="143.5"
+                width="9.0"
+                height="24.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-01: +0.05%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="588.1"
+                y="113.9"
+                width="9.0"
+                height="54.1"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-02: +0.11%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="602.9"
+                y="114.0"
+                width="9.0"
+                height="54.0"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-03: +0.11%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="617.6"
+                y="127.8"
+                width="9.0"
+                height="40.2"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-04: +0.08%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="632.3"
+                y="154.6"
+                width="9.0"
+                height="13.4"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-08: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="647.1"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-09: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="661.8"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-10: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="676.6"
+                y="151.9"
+                width="9.0"
+                height="16.1"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-11: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="691.3"
+                y="157.9"
+                width="9.0"
+                height="10.1"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-14: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="706.0"
+                y="125.2"
+                width="9.0"
+                height="42.8"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-15: +0.09%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="720.8"
+                y="159.5"
+                width="9.0"
+                height="8.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-16: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="735.5"
+                y="168.0"
+                width="9.0"
+                height="22.6"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-09-17: -0.05%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="750.3"
+                y="168.0"
+                width="9.0"
+                height="27.8"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-09-18: -0.06%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="765.0"
+                y="157.5"
+                width="9.0"
+                height="10.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-21: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="779.7"
+                y="151.2"
+                width="9.0"
+                height="16.8"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-22: +0.04%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="794.5"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-23: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="824.0"
+                y="120.0"
+                width="9.0"
+                height="48.0"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-25: +0.10%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="838.7"
+                y="168.0"
+                width="9.0"
+                height="92.9"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-09-28: -0.19%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="853.4"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-09-29: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="882.9"
+                y="154.8"
+                width="9.0"
+                height="13.2"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-01: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="897.7"
+                y="150.9"
+                width="9.0"
+                height="17.1"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-02: +0.04%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="912.4"
+                y="154.7"
+                width="9.0"
+                height="13.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-05: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="927.1"
+                y="168.0"
+                width="9.0"
+                height="49.2"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-10-06: -0.10%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="941.9"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-07: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="971.4"
+                y="107.4"
+                width="9.0"
+                height="60.6"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-09: +0.13%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="986.1"
+                y="65.9"
+                width="9.0"
+                height="102.1"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-12: +0.21%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="1000.8"
+                y="168.0"
+                width="9.0"
+                height="75.4"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-10-13: -0.16%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="1015.6"
+                y="159.5"
+                width="9.0"
+                height="8.5"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-14: +0.02%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="1030.3"
+                y="163.7"
+                width="9.0"
+                height="4.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-15: +0.01%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="1045.1"
+                y="103.8"
+                width="9.0"
+                height="64.2"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-16: +0.13%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="negative"
+                x="1059.8"
+                y="168.0"
+                width="9.0"
+                height="60.5"
+                fill="#fb7185"
+                opacity="0.9"
+            >
+                <title>2026-10-19: -0.13%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="1074.5"
+                y="152.3"
+                width="9.0"
+                height="15.7"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-20: +0.03%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="1089.3"
+                y="123.7"
+                width="9.0"
+                height="44.3"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-21: +0.09%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="1118.8"
+                y="34.1"
+                width="9.0"
+                height="133.9"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-23: +0.28%</title>
+            </rect>
+            
+            <rect
+                class="daily-bar"
+                data-direction="positive"
+                x="1133.5"
+                y="130.4"
+                width="9.0"
+                height="37.6"
+                fill="#34d399"
+                opacity="0.9"
+            >
+                <title>2026-10-26: +0.08%</title>
+            </rect>
+            
+        <polyline
+            class="cumulative-line"
+            points="62.0,272.3 76.7,254.6 91.5,253.8 106.2,234.1 121.0,233.3 135.7,223.7 150.4,223.7 165.2,222.9 179.9,220.5 194.7,219.7 209.4,223.3 224.1,221.7 238.9,219.1 253.6,217.5 268.4,216.1 283.1,203.8 297.8,202.1 312.6,201.3 327.3,182.2 342.1,163.1 356.8,161.6 371.5,185.2 386.3,173.5 401.0,167.9 415.8,170.7 430.5,168.4 445.2,166.8 460.0,166.8 474.7,180.8 489.5,180.0 504.2,200.9 518.9,200.1 533.7,191.8 548.4,169.9 563.2,169.9 577.9,165.2 592.6,154.7 607.4,144.3 622.1,136.5 636.8,133.9 651.6,133.0 666.3,132.2 681.1,129.1 695.8,127.1 710.5,118.8 725.3,117.2 740.0,121.6 754.8,127.0 769.5,124.9 784.2,121.6 799.0,120.8 813.7,120.8 828.5,111.5 843.2,129.6 857.9,128.7 872.7,128.7 887.4,126.2 902.2,122.8 916.9,120.2 931.6,129.8 946.4,129.0 961.1,129.0 975.9,117.2 990.6,97.3 1005.3,112.0 1020.1,110.4 1034.8,109.6 1049.6,97.1 1064.3,108.8 1079.0,105.8 1093.8,97.2 1108.5,97.2 1123.3,71.0 1138.0,63.7"
+            fill="none"
+            stroke="#60a5fa"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+        />
+        <polyline
+            class="ema-line"
+            points="62.0,258.9 76.7,225.5 91.5,214.3 106.2,187.3 121.0,183.0 135.7,171.2 150.4,170.6 165.2,169.4 179.9,166.8 194.7,166.3 209.4,170.0 224.1,168.1 238.9,165.7 253.6,164.5 268.4,163.9 283.1,153.0 297.8,154.2 312.6,155.9 327.3,140.1 342.1,127.2 356.8,133.2 371.5,161.7 386.3,151.8 401.0,149.5 415.8,155.5 430.5,155.6 445.2,156.3 460.0,158.4 474.7,173.4 489.5,171.6 504.2,190.6 518.9,185.7 533.7,174.7 548.4,152.9 563.2,155.6 577.9,153.4 592.6,146.3 607.4,140.4 622.1,138.1 636.8,141.1 651.6,145.2 666.3,148.6 681.1,149.2 695.8,150.8 710.5,146.1 725.3,148.6 740.0,156.2 754.8,163.4 769.5,162.3 784.2,160.3 799.0,160.9 813.7,162.2 828.5,154.5 843.2,173.9 857.9,172.0 872.7,171.3 887.4,168.3 902.2,165.1 916.9,163.2 931.6,173.0 946.4,171.4 961.1,170.7 975.9,159.2 990.6,142.3 1005.3,160.6 1020.1,160.4 1034.8,161.0 1049.6,150.6 1064.3,164.8 1079.0,162.5 1093.8,155.5 1108.5,157.7 1123.3,135.3 1138.0,134.4"
+            fill="none"
+            stroke="#f59e0b"
+            stroke-width="2"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+        />
+        
+        <text
+            x="16"
+            y="168.0"
+            fill="#8b95a5"
+            font-size="10"
+            text-anchor="middle"
+            transform="rotate(-90 16 168.0)"
+        >Daily</text>
+        <text
+            x="1188"
+            y="168.0"
+            fill="#8b95a5"
+            font-size="10"
+            text-anchor="middle"
+            transform="rotate(90 1188 168.0)"
+        >Cumulative</text>
+        </svg>
+        
+
+        <div class="legend daily-legend">
+
+            <span>
+                <span class="sw sw-cumulative"></span>
+                Portfolio (cumulative)
+            </span>
+
+            <span>
+                <span class="sw sw-daily-positive"></span>
+                Daily +
+            </span>
+
+            <span>
+                <span class="sw sw-daily-negative"></span>
+                Daily −
+            </span>
+
+            <span>
+                <span class="sw sw-ema"></span>
+                10-EMA daily (progressive)
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================ -->
+    <!-- EQUITY CURVE                                 -->
+    <!-- ============================================ -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Equity Curve
+        </div>
+
+        
+    <svg
+        viewBox="0 0 900 300"
+        preserveAspectRatio="none"
+        style="width:100%;height:auto"
+    >
+
+        
+        <line
+            x1="0"
+            y1="0.0"
+            x2="900"
+            y2="0.0"
+            stroke="#1f2733"
+            stroke-width="1"
+        />
+        
+        <line
+            x1="0"
+            y1="150.0"
+            x2="900"
+            y2="150.0"
+            stroke="#1f2733"
+            stroke-width="1"
+        />
+        
+        <line
+            x1="0"
+            y1="300.0"
+            x2="900"
+            y2="300.0"
+            stroke="#1f2733"
+            stroke-width="1"
+        />
+        
+
+        <polygon
+            points="0,300 0.0,279.3 8.7,262.0 17.3,261.2 26.0,242.1 34.6,242.1 43.3,242.1 51.9,241.3 60.6,231.9 69.2,231.9 77.9,231.1 86.5,228.8 95.2,228.8 103.8,228.8 112.5,228.0 121.2,231.5 129.8,229.9 138.5,227.4 147.1,225.8 155.8,225.8 164.4,225.8 173.1,224.5 181.7,212.5 190.4,210.9 199.0,210.1 207.7,191.5 216.3,191.5 225.0,191.5 233.7,172.8 242.3,171.4 251.0,194.4 259.6,182.9 268.3,177.5 276.9,177.5 285.6,177.5 294.2,180.3 302.9,178.0 311.5,176.4 320.2,176.4 328.8,190.1 337.5,190.1 346.2,190.1 354.8,189.3 363.5,209.7 372.1,208.9 380.8,200.8 389.4,179.5 398.1,179.5 406.7,179.5 415.4,179.5 424.0,174.9 432.7,164.7 441.3,154.5 450.0,146.9 458.7,146.9 467.3,146.9 476.0,146.9 484.6,144.3 493.3,143.5 501.9,142.7 510.6,139.7 519.2,139.7 527.9,139.7 536.5,137.8 545.2,129.7 553.8,128.0 562.5,132.3 571.2,137.6 579.8,137.6 588.5,137.6 597.1,135.6 605.8,132.4 614.4,131.6 623.1,131.6 631.7,122.5 640.4,122.5 649.0,122.5 657.7,140.1 666.3,139.3 675.0,139.3 683.7,136.8 692.3,133.6 701.0,133.6 709.6,133.6 718.3,131.0 726.9,140.4 735.6,139.6 744.2,139.6 752.9,128.1 761.5,128.1 770.2,128.1 778.8,108.7 787.5,123.1 796.2,121.4 804.8,120.6 813.5,108.4 822.1,108.4 830.8,108.4 839.4,119.9 848.1,117.0 856.7,108.5 865.4,108.5 874.0,83.1 882.7,83.1 891.3,83.1 900.0,75.9 900,300"
+            fill="#22c55e"
+            opacity="0.08"
+        />
+
+        <polyline
+            points="0.0,279.3 8.7,262.0 17.3,261.2 26.0,242.1 34.6,242.1 43.3,242.1 51.9,241.3 60.6,231.9 69.2,231.9 77.9,231.1 86.5,228.8 95.2,228.8 103.8,228.8 112.5,228.0 121.2,231.5 129.8,229.9 138.5,227.4 147.1,225.8 155.8,225.8 164.4,225.8 173.1,224.5 181.7,212.5 190.4,210.9 199.0,210.1 207.7,191.5 216.3,191.5 225.0,191.5 233.7,172.8 242.3,171.4 251.0,194.4 259.6,182.9 268.3,177.5 276.9,177.5 285.6,177.5 294.2,180.3 302.9,178.0 311.5,176.4 320.2,176.4 328.8,190.1 337.5,190.1 346.2,190.1 354.8,189.3 363.5,209.7 372.1,208.9 380.8,200.8 389.4,179.5 398.1,179.5 406.7,179.5 415.4,179.5 424.0,174.9 432.7,164.7 441.3,154.5 450.0,146.9 458.7,146.9 467.3,146.9 476.0,146.9 484.6,144.3 493.3,143.5 501.9,142.7 510.6,139.7 519.2,139.7 527.9,139.7 536.5,137.8 545.2,129.7 553.8,128.0 562.5,132.3 571.2,137.6 579.8,137.6 588.5,137.6 597.1,135.6 605.8,132.4 614.4,131.6 623.1,131.6 631.7,122.5 640.4,122.5 649.0,122.5 657.7,140.1 666.3,139.3 675.0,139.3 683.7,136.8 692.3,133.6 701.0,133.6 709.6,133.6 718.3,131.0 726.9,140.4 735.6,139.6 744.2,139.6 752.9,128.1 761.5,128.1 770.2,128.1 778.8,108.7 787.5,123.1 796.2,121.4 804.8,120.6 813.5,108.4 822.1,108.4 830.8,108.4 839.4,119.9 848.1,117.0 856.7,108.5 865.4,108.5 874.0,83.1 882.7,83.1 891.3,83.1 900.0,75.9"
+            fill="none"
+            stroke="#22c55e"
+            stroke-width="2"
+        />
+
+        <polyline
+            points="0.0,259.1 8.7,270.5 17.3,269.7 26.0,256.2 34.6,256.2 43.3,256.2 51.9,255.4 60.6,247.4 69.2,247.4 77.9,246.6 86.5,248.0 95.2,248.0 103.8,248.0 112.5,247.2 121.2,262.8 129.8,261.2 138.5,255.3 147.1,253.7 155.8,253.7 164.4,253.7 173.1,252.4 181.7,242.7 190.4,241.1 199.0,240.3 207.7,199.7 216.3,199.7 225.0,199.7 233.7,181.3 242.3,178.4 251.0,194.8 259.6,184.5 268.3,173.5 276.9,173.5 285.6,173.5 294.2,173.9 302.9,156.1 311.5,154.5 320.2,154.5 328.8,160.8 337.5,160.8 346.2,160.8 354.8,160.0 363.5,171.6 372.1,170.8 380.8,163.1 389.4,131.3 398.1,131.3 406.7,131.3 415.4,131.3 424.0,127.4 432.7,117.7 441.3,108.3 450.0,101.7 458.7,101.7 467.3,101.7 476.0,101.7 484.6,102.3 493.3,101.5 501.9,100.7 510.6,108.5 519.2,108.5 527.9,108.5 536.5,108.4 545.2,109.9 553.8,108.3 562.5,113.1 571.2,134.2 579.8,134.2 588.5,134.2 597.1,132.3 605.8,129.3 614.4,128.5 623.1,128.5 631.7,114.7 640.4,114.7 649.0,114.7 657.7,114.3 666.3,113.5 675.0,113.5 683.7,111.0 692.3,108.7 701.0,108.7 709.6,108.7 718.3,106.3 726.9,116.1 735.6,115.3 744.2,115.3 752.9,104.7 761.5,104.7 770.2,104.7 778.8,85.6 787.5,68.1 796.2,66.5 804.8,65.6 813.5,54.0 822.1,54.0 830.8,54.0 839.4,66.0 848.1,63.9 856.7,55.5 865.4,55.5 874.0,27.5 882.7,27.5 891.3,27.5 900.0,20.7"
+            fill="none"
+            stroke="#f59e0b"
+            stroke-width="2"
+            stroke-dasharray="6 4"
+        />
+
+    </svg>
+    
+
+        <div class="legend">
+
+            <span>
+                <span class="sw sw-live"></span>
+                Live
+            </span>
+
+            <span>
+                <span class="sw sw-bt"></span>
+                Backtest (AM-Live-Test.csv)
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================ -->
+    <!-- MONTHLY RETURN                               -->
+    <!-- ============================================ -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Monthly Return
+        </div>
+
+        <div class="month-row month-header">
+
+            <span>Month</span>
+
+            <span>Live</span>
+
+            <span>Backtest</span>
+
+        </div>
+
+        
+            <div class="month-row">
+
+                <span>
+                    July 2026
+                </span>
+
+                <span class="pos">
+                    0.41%
+                </span>
+
+                <span class="pos">
+                    0.10%
+                </span>
+
+            </div>
+            
+            <div class="month-row">
+
+                <span>
+                    August 2026
+                </span>
+
+                <span class="pos">
+                    0.52%
+                </span>
+
+                <span class="pos">
+                    1.37%
+                </span>
+
+            </div>
+            
+            <div class="month-row">
+
+                <span>
+                    September 2026
+                </span>
+
+                <span class="pos">
+                    0.45%
+                </span>
+
+                <span class="pos">
+                    0.20%
+                </span>
+
+            </div>
+            
+            <div class="month-row">
+
+                <span>
+                    October 2026
+                </span>
+
+                <span class="pos">
+                    0.70%
+                </span>
+
+                <span class="pos">
+                    1.03%
+                </span>
+
+            </div>
+            
+
+    </div>
+
+
+    <!-- ============================================ -->
+    <!-- EXCLUDED STRATEGIES                          -->
+    <!-- ============================================ -->
+
+    
+        <div class="info">
+            Excluded: $2 Put Credit Spread (8 trades)
+        </div>
+        
+
+</div>
+
+</body>
+
+</html>
